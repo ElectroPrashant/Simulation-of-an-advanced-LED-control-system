@@ -1,0 +1,103 @@
+#include <stdint.h>  // Include the standard integer library for types like uint8_t and uint32_t
+
+// define the LED pin
+const int LED_PIN = 9; // Change this to the actual pin you're using
+
+// define the structure to store individual LED settings
+struct LEDSettings {
+    uint8_t state;        // ON/OFF state of the LED (1 = ON, 0 = OFF)
+    uint8_t brightness;   // Brightness level (0-255)
+    uint32_t color;       // RGB color value (0xRRGGBB format)
+};
+
+// define the structure to represent a group of LEDs
+struct LEDGroup {
+    LEDSettings singleLED;    // Individual LED settings
+    uint8_t groupState;       // Collective ON/OFF state of the group (1 = ON, 0 = OFF)
+    uint8_t groupBrightness;  // Collective brightness adjustment for the group (0-255)
+};
+
+// function to initialize an LEDGroup with default values
+void initLEDGroup(LEDGroup *group) {
+    group->singleLED.state = 0;          // Default state: OFF
+    group->singleLED.brightness = 0;     // Default brightness: 0 (minimum)
+    group->singleLED.color = 0x000000;   // Default color: Black (RGB 0x000000)
+    group->groupState = 0;               // Group is OFF by default
+    group->groupBrightness = 0;          // Group brightness is set to minimum (0)
+}
+
+// function to update both individual and group settings
+void updateLEDGroupSettings(LEDGroup *group, uint8_t groupState, uint8_t groupBrightness,
+                            uint8_t state, uint8_t brightness, uint32_t color) {
+    // update the individual LED settings
+    group->singleLED.state = state;
+    group->singleLED.brightness = brightness;
+    group->singleLED.color = color;
+
+    // update the group-level settings
+    group->groupState = groupState;
+    group->groupBrightness = groupBrightness;
+}
+
+// function to apply settings to the LED hardware
+void applyLEDSettings(const LEDGroup *group) {
+    if (group->singleLED.state == 1) {
+        analogWrite(LED_PIN, group->singleLED.brightness);  // Set LED brightness
+        // Note: RGB color handling is not covered here; this is a single LED example
+    } else {
+        analogWrite(LED_PIN, 0);  // Turn off the LED if the state is OFF
+    }
+}
+
+// Function to display the current status of the LED group
+void displayLEDGroupStatus(const LEDGroup *group) {
+    Serial.print("Single LED State: ");
+    Serial.println(group->singleLED.state ? "ON" : "OFF");
+
+    Serial.print("Single LED Brightness: ");
+    Serial.println(group->singleLED.brightness);
+
+    Serial.print("Single LED Color (RGB): 0x");
+    Serial.println(group->singleLED.color, HEX);
+
+    Serial.print("Group State: ");
+    Serial.println(group->groupState ? "ON" : "OFF");
+
+    Serial.print("Group Brightness: ");
+    Serial.println(group->groupBrightness);
+}
+
+void setup() {
+    // initialize serial communication for debugging
+    Serial.begin(9600);
+
+    // set the LED_PIN as an output
+    pinMode(LED_PIN, OUTPUT);
+
+    // create an instance of LEDGroup
+    LEDGroup myLEDGroup;
+
+    // initialize the LED group with default values
+    initLEDGroup(&myLEDGroup);
+
+    // display the initial status of the LED group
+    Serial.println("Initial LED Group Status:");
+    displayLEDGroupStatus(&myLEDGroup);
+
+    // apply the initial settings to the LED
+    applyLEDSettings(&myLEDGroup);
+
+    // update the LED group with new settings
+    updateLEDGroupSettings(&myLEDGroup, 1, 128, 1, 255, 0xFF0000);  // Set group and LED ON, with red color
+
+    // apply the updated settings to the LED
+    applyLEDSettings(&myLEDGroup);
+
+    // display the updated status
+    Serial.println("\nUpdated LED Group Status:");
+    displayLEDGroupStatus(&myLEDGroup);
+}
+
+void loop() {
+    // empty 
+} 
